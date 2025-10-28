@@ -8,26 +8,33 @@ var fetchuser = require("../middleware/fetchuser");
 
 const JWT_SECRET = "muneebisagoodb$oy";
 
+// ROUTE 1: Create a User using: POST "/api/auth/createuser"
 router.post(
   "/createuser",
   [
     body("name", "Enter a valid name").isLength({ min: 3 }),
     body("email", "Enter a valid email").isEmail(),
-    body("password", "Passwrod must atleast 5 characters").isLength({ min: 5 }),
+    body("password", "Password must be at least 5 characters").isLength({
+      min: 5,
+    }),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+
+    let success = false; // ✅ Added success flag
+
     try {
       let user = await User.findOne({ email: req.body.email });
-      console.log(user);
       if (user) {
-        return res
-          .status(400)
-          .json({ error: "Sorry a user with this email already exist" });
+        return res.status(400).json({
+          success,
+          error: "Sorry, a user with this email already exists",
+        });
       }
+
       const salt = await bcrypt.genSalt(10);
       const secPass = await bcrypt.hash(req.body.password, salt);
 
@@ -36,32 +43,32 @@ router.post(
         email: req.body.email,
         password: secPass,
       });
-      //   .then((user) => res.json(user))
-      //   .catch((err) => {
-      //     console.log(err);
-      //     res.json({ error: "Enter a unique email", message: err.message });
-      //   });
+
       const data = {
         user: {
           id: user.id,
         },
       };
-      const authToken = jwt.sign(data, JWT_SECRET);
 
-      res.json({ authToken });
+      const authToken = jwt.sign(data, JWT_SECRET);
+      success = true;
+      res.json({ success, authtoken: authToken }); // ✅ use lowercase "authtoken"
     } catch (error) {
-      console.log(error.message);
+      console.error(error.message);
       res.status(500).send("Internal Server Error");
     }
   }
 );
+
+// ROUTE 2: Authenticate a User using: POST "/api/auth/login"
 router.post(
   "/login",
   [
     body("email", "Enter a valid email").isEmail(),
-    body("password", "Password cannat be blank").exists(),
+    body("password", "Password cannot be blank").exists(),
   ],
   async (req, res) => {
+    let success = false;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -71,15 +78,18 @@ router.post(
     try {
       let user = await User.findOne({ email });
       if (!user) {
-        return res
-          .status(400)
-          .json({ error: "Please try to login with correct Credentials" });
+        return res.status(400).json({
+          success,
+          error: "Please try to login with correct credentials",
+        });
       }
+
       const passwordCompare = await bcrypt.compare(password, user.password);
       if (!passwordCompare) {
-        return res
-          .status(400)
-          .json({ error: "Please try to login with correct Credentials" });
+        return res.status(400).json({
+          success,
+          error: "Please try to login with correct credentials",
+        });
       }
 
       const payload = {
@@ -87,21 +97,25 @@ router.post(
           id: user.id,
         },
       };
+
       const authToken = jwt.sign(payload, JWT_SECRET);
-      res.json(authToken);
+      success = true;
+      res.json({ success, authtoken: authToken }); // ✅ same key used as createuser
     } catch (error) {
-      console.log(error.message);
+      console.error(error.message);
       res.status(500).send("Internal Server Error");
     }
   }
 );
+
+// ROUTE 3: Get logged-in user details using: POST "/api/auth/getuser"
 router.post("/getuser", fetchuser, async (req, res) => {
   try {
-    userId = req.user.id;
+    const userId = req.user.id;
     const user = await User.findById(userId).select("-password");
     res.send(user);
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     res.status(500).send("Internal Server Error");
   }
 });
