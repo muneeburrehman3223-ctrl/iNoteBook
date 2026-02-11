@@ -7,6 +7,7 @@ const Home = (props) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // 🔒 Agar user login nahi hai to login page par bhej do
     if (!localStorage.getItem("token")) {
       showAlert("Please login to access your notes", "warning");
       navigate("/login");

@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
-const mongoURI = "mongodb://localhost:27017/inotebook"; // apna URI likho
+
+// Use environment variable for MongoDB URI
+// Local ke liye fallback
+const mongoURI = "mongodb://127.0.0.1:27017/inotebook"; // Compass se connect ho raha
+
 
 const connectToMongo = async () => {
   try {
@@ -10,7 +14,7 @@ const connectToMongo = async () => {
     console.log("Connected to Mongo Successfully");
   } catch (err) {
     console.error("MongoDB connection failed:", err);
-    process.exit(1);
+    process.exit(1); // Exit if DB connection fails
   }
 };
 
