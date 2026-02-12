@@ -15,7 +15,7 @@ function Notes(props) {
     } else {
       navigate("/login");
     }
-  }, []);
+  }, [getNotes, navigate]);
   const ref = useRef(null);
   const refClose = useRef(null);
   const [note, setNote] = useState({
